@@ -74,7 +74,7 @@ def chunk_text(text, max_tokens=16000):
 
     return chunks
 
-async def process_chunk(chunk):
+def process_chunk(chunk):
     try:
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
@@ -94,10 +94,13 @@ async def improve_text_with_gpt4(text):
         return "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
 
     improved_chunks = []
+    improved_chunk = []
+
     chunks = chunk_text(text)
     
     for chunk in chunks:
-        improved_chunks.append(process_chunk(chunk))
+        improved_chunk = process_chunk(chunk)
+        improved_chunks.append(improved_chunk)
 
     # Combine all improved chunks back into one text
     return ' '.join(improved_chunks)
