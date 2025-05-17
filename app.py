@@ -93,11 +93,11 @@ async def improve_text_with_gpt4(text):
     if not client.api_key:
         return "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
 
+    improved_chunks = []
     chunks = chunk_text(text)
-
-    # Use asyncio.gather to run all tasks concurrently
-    tasks = [process_chunk(chunk) for chunk in chunks]
-    improved_chunks = await asyncio.gather(*tasks)
+    
+    for chunk in chunks:
+        improved_chunks.append(process_chunk(chunk))
 
     # Combine all improved chunks back into one text
     return ' '.join(improved_chunks)
