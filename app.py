@@ -1,8 +1,6 @@
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
-from openai import OpenAI, AsyncOpenAI
-from openai import OpenAIError
 import os
 from auth import require_custom_authentication
 from dotenv import load_dotenv
@@ -17,12 +15,6 @@ app = Flask(__name__)
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Set up OpenAI API key
-client = AsyncOpenAI(
-    # This is the default and can be omitted
-    api_key=os.environ.get("OPENAI_API_KEY"),
-)
 
 def get_youtube_id(url):
     # Extract video ID from YouTube URL
@@ -42,69 +34,6 @@ def process_transcript(video_id):
     full_text = ' '.join([entry['text'] for entry in transcript])
     return full_text
 
-def chunk_text(text, max_tokens=16000):
-    """
-    Splits the text into chunks of approximately max_tokens tokens each.
-    """
-    # Initialize tokenizer
-    tokenizer = tiktoken.encoding_for_model("gpt-4o-mini")
-
-    words = text.split()
-    chunks = []
-    current_chunk = []
-    current_token_count = 0
-
-    for word in words:
-        # Estimate token count for the word
-        word_token_count = len(tokenizer.encode(word + " "))  # Add space to ensure accurate token count
-
-        # If adding this word exceeds the max token limit, finalize the current chunk
-        if current_token_count + word_token_count > max_tokens:
-            chunks.append(' '.join(current_chunk))
-            current_chunk = []
-            current_token_count = 0
-
-        # Add the word to the current chunk
-        current_chunk.append(word)
-        current_token_count += word_token_count
-
-    # Append the last chunk
-    if current_chunk:
-        chunks.append(' '.join(current_chunk))
-
-    return chunks
-
-def process_chunk(chunk):
-    try:
-        response = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": """You are a helpful assistant that improves text formatting and adds punctuation. 
-                 You will be given texts from YouTube transcriptions and your task is to apply good formatting.
-                 Do NOT modify individual words."""},
-                {"role": "user", "content": chunk}
-            ]
-        )
-        return response.choices[0].message.content
-    except OpenAIError as e:
-        return f"OpenAI API error: {str(e)}"
-
-async def improve_text_with_gpt4(text):
-    if not client.api_key:
-        return "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
-
-    improved_chunks = []
-    improved_chunk = []
-
-    chunks = chunk_text(text)
-    
-    for chunk in chunks:
-        improved_chunk = process_chunk(chunk)
-        improved_chunks.append(improved_chunk)
-
-    # Combine all improved chunks back into one text
-    return ' '.join(improved_chunks)
-
 @app.route('/transcribe', methods=['POST'])
 @require_custom_authentication
 def transcribe():
@@ -120,9 +49,7 @@ def transcribe():
         logger.info(f"videoid = {video_id}")
         transcript_text = process_transcript(video_id)
         logger.info(f"text = {transcript_text}")
-        improved_text = asyncio.run(improve_text_with_gpt4(transcript_text))
-
-        return jsonify({"result": improved_text})
+        return jsonify({"result": transcript_text})
     
     except Exception as e:
         logger.exception(f"An unexpected error occurred: {e}")
