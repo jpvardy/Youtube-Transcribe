@@ -30,13 +30,15 @@ def get_youtube_id(url):
     return video_id.group(1) if video_id else None
 
 def process_transcript(video_id):
-    proxy_address=os.environ.get("PROXY")
+    proxy_http_address=os.environ.get("PROXY_HTTP")
+    proxy_https_address=os.environ.get("PROXY_HTTPS")
 
-    if proxy_address is None:
+
+    if proxy_http_address is None:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
 
     else:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, proxies = {"http": proxy_address,"https": proxy_address})
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, proxies = {"http": proxy_http_address,"https": proxy_https_address})
     
     full_text = ' '.join([entry['text'] for entry in transcript])
     return full_text
