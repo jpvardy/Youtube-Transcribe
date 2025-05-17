@@ -33,7 +33,6 @@ def process_transcript(video_id):
     proxy_http_address=os.environ.get("PROXY_HTTP")
     proxy_https_address=os.environ.get("PROXY_HTTPS")
 
-
     if proxy_http_address is None:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
 
@@ -104,7 +103,7 @@ async def improve_text_with_gpt4(text):
     return ' '.join(improved_chunks)
 
 @app.route('/transcribe', methods=['POST'])
-# @require_custom_authentication
+@require_custom_authentication
 def transcribe():
     youtube_url = request.json.get('url')
     if not youtube_url:
