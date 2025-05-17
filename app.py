@@ -38,7 +38,7 @@ def process_transcript(video_id):
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
 
     else:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, proxies = {"http": proxy_http_address,"https": proxy_https_address})
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, proxies = {"http_url": proxy_http_address,"https_url": proxy_https_address})
     
     full_text = ' '.join([entry['text'] for entry in transcript])
     return full_text
